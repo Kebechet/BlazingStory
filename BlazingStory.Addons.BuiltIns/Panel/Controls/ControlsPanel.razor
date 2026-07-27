@@ -1,3 +1,5 @@
+@using System.Net
+@using System.Text.RegularExpressions
 @using BlazingStory.Addons.BuiltIns.Panel.Controls.ParameterControllers
 
 <PanelTitle>
@@ -33,7 +35,7 @@
                     @* The Description column is rendered in the docs view only, where there is room
                        for it. Exposing the same summary as a tooltip keeps it reachable in the
                        canvas view, which is where the controls are actually manipulated. *@
-                    <td class="name" title="@parameter.Summary.Value">
+                    <td class="name" title="@GetSummaryTooltip(parameter)">
                         <span>@parameter.Name</span>
                         @if (parameter.Required)
                         {
@@ -114,6 +116,24 @@
             }
             this._LastShownStory = this.Story;
         }
+    }
+
+    /// <summary>
+    /// Returns the parameter summary as plain text for use in a "title" tooltip, or null when the
+    /// parameter has no summary so that the attribute is omitted entirely.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IComponentParameter.Summary"/> is a <see cref="MarkupString"/>: its text is HTML
+    /// encoded and a &lt;see href="..."/&gt; is rendered as an anchor element. Bound straight to an
+    /// attribute it would be encoded a second time and any tags would show up as literal text, so
+    /// tags are stripped and entities decoded here.
+    /// </remarks>
+    /// <param name="parameter">The parameter whose summary is shown.</param>
+    private static string? GetSummaryTooltip(IComponentParameter parameter)
+    {
+        if (string.IsNullOrWhiteSpace(parameter.Summary.Value)) return null;
+        var plainText = WebUtility.HtmlDecode(Regex.Replace(parameter.Summary.Value, "<[^>]*>", ""));
+        return string.IsNullOrWhiteSpace(plainText) ? null : plainText;
     }
 
     /// <summary>
